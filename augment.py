@@ -6,7 +6,7 @@ from utils import pretty_fraction
 import life_io as lio
 import life_core as lc
 import life_utils as lu
-import special_params as sp
+import life_misc as sp
 
 TORUS_SIZE = 8
 input_filename = f'Torus{TORUS_SIZE}x{TORUS_SIZE}.txt'
@@ -53,12 +53,12 @@ with open(input_filename) as input, \
         period = int(re.search(r'c(\d+)', config_line).group(1))
         
         param_c = pretty_fraction(sum([f.sum() for f in cycle]), period)
-        param_h = pretty_fraction(sum([sp.calculate_param_h(f, TORUS_SIZE) for f in cycle]), period)
-        param_d = pretty_fraction(sum([sp.calculate_param_d(f, TORUS_SIZE) for f in cycle]), period)
+        param_h = pretty_fraction(sum([sp.calculate_param_h(f) for f in cycle]), period)
+        param_d = pretty_fraction(sum([sp.calculate_param_d(f) for f in cycle]), period)
 
-        param_hh = pretty_fraction(sum([sp.calculate_param_h(f, TORUS_SIZE, 2) for f in cycle]), period)
-        param_dd = pretty_fraction(sum([sp.calculate_param_d(f, TORUS_SIZE, 2) for f in cycle]), period)
-        param_hd = pretty_fraction(sum([sp.calculate_param_hd(f, TORUS_SIZE) for f in cycle]), period)
+        param_hh = pretty_fraction(sum([sp.calculate_param_h(f, 2) for f in cycle]), period)
+        param_dd = pretty_fraction(sum([sp.calculate_param_d(f, 2) for f in cycle]), period)
+        param_hd = pretty_fraction(sum([sp.calculate_param_hd(f) for f in cycle]), period)
 
         # output new config line
         output.write(f'#{id}: p={period}: c={param_c}: h={param_h}: d={param_d}: hh={param_hh}: dd={param_dd}: hd={param_hd}:\n')
