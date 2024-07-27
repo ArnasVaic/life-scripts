@@ -1,17 +1,16 @@
 # %%
-
-from cycle import read_pretty_cycle_data
-from scipy.signal import convolve2d
-from prettify import find_pretty
 import numpy as np
 import re
-import special_params as sp
-import life_core as lc
-from utils import pretty_fraction
 
-TORUS_SIZE = 7
+from utils import pretty_fraction
+import life_io as lio
+import life_core as lc
+import life_utils as lu
+import special_params as sp
+
+TORUS_SIZE = 8
 input_filename = f'Torus{TORUS_SIZE}x{TORUS_SIZE}.txt'
-output_filename = f'Torus{TORUS_SIZE}x{TORUS_SIZE}-augmented.txt'
+output_filename = f'Torus{TORUS_SIZE}x{TORUS_SIZE}-augmented-pretty.txt'
 eigenvalue_filename = f'EigenValues{TORUS_SIZE}x{TORUS_SIZE}.txt'
 
 with open(input_filename) as input, \
@@ -31,9 +30,10 @@ with open(input_filename) as input, \
         if not config_line:
             break
 
-        frame = read_pretty_cycle_data(input, TORUS_SIZE, 'O', '-', ' ')
+        frame_lines = [input.readline() for _ in range(TORUS_SIZE)]
+        frame = lio.parse_pretty_frame(''.join(frame_lines), TORUS_SIZE, 'O', '-', ' ')
         empty_line = input.readline()
-        pretty_frame = find_pretty(frame, TORUS_SIZE)
+        pretty_frame = lu.find_pretty(frame)
 
         cycle = [frame]
 
