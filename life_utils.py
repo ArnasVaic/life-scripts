@@ -4,25 +4,58 @@ import numpy as np
 
 # assume being pretty is like an invariant, 
 # generally this is not true but we will hope for the best
-def find_cycle_id(cutout_to_find, all_cutouts):
+def find_cycle_id(cutout_to_find, cycle_cutouts):
     # perform a cardinal sin - linear search, because 
     # I'm too lazy to think of a faster way in python
 
-    for cycle_id, cycle_cutouts in enumerate(all_cutouts):
-        for cutout in cycle_cutouts:
-            
-            if cutout.shape != cutout_to_find.shape:
-                continue
-            
-            print("comparing to:")
-            print(lc.display(cutout))
+    for cycle_id, cutout in enumerate(cycle_cutouts):
+    
+        if cutout is None:
+            continue
+        
+        # D4 dyhedral group transforms
+        lr = np.fliplr(cutout)
+        d4 = [
+            cutout,
+            lr,
+            np.rot90(lr,-1),
+            np.rot90(cutout),
+            np.flipud(lr),
+            np.flipud(cutout),
+            cutout.T,
+            np.rot90(cutout, k=3),
+        ]
 
-            if (cutout == cutout_to_find).all():
+        # check if both squares
+        if (cutout.shape == cutout_to_find.shape) and (cutout.shape[0] == cutout.shape[1]):
+            if any([ (transformed == cutout_to_find).all() for transformed in d4 ]):
+                # elements are equal, we found or winner
+                # lucky for us the cycle indices are ordered
+                # +1 because 0th is the empty state
+                return 1 + cycle_id
+
+        i = cutout
+        r = np.rot90(cutout, 2),
+        f = np.flipud(cutout),
+        rf = np.flipud(np.rot90(cutout, 2))
+        d2 = [ i, r, f, rf ]
+
+        # check if both rectangles, can be transposed
+        if (cutout.shape == cutout_to_find.shape):
+            if any([ (transformed == cutout_to_find).all() for transformed in d2 ]):
                 # elements are equal, we found or winner
                 # lucky for us the cycle indices are ordered
                 # +1 because 0th is the empty state
                 return 1 + cycle_id
             
+        if (cutout.shape[0] == cutout_to_find.shape[1]) and (cutout.shape[1] == cutout_to_find.shape[0]):
+            if any([ (transformed == np.rot90(cutout_to_find)).all() for transformed in d2 ]):
+                # elements are equal, we found or winner
+                # lucky for us the cycle indices are ordered
+                # +1 because 0th is the empty state
+                return 1 + cycle_id
+        #print(cutout.shape, cutout_to_find.shape)
+
     # end of the line
     return None
 
