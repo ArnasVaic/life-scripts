@@ -3,6 +3,25 @@ from scipy.signal import convolve2d
 
 LIFE_KERNEL = [ [1, 1, 1], [1, 0, 1], [1, 1, 1] ]
 
+def find_cycle(frame):
+  cycle, current = [frame], frame
+  while True:
+    current = next(current)
+    if np.array_equal(current, cycle[0]):
+      break
+    cycle.append(current)
+  return cycle
+
+def display(frame):
+  ascii_lookup = { 0: '-', 1: 'O' }
+  strings = []
+  for row in range(frame.shape[0]):
+    for col in range(frame.shape[1]):
+      strings.append(ascii_lookup[frame[row][col]])
+      strings.append(' ')
+    strings.append('\n')
+  return ''.join(strings)
+
 def cycle_to_str(cycle, size, ascii):
   strings = []
   ascii_lookup = { 0: '-', 1: 'O' }
@@ -17,13 +36,13 @@ def cycle_to_str(cycle, size, ascii):
     strings.append('\n')
   return ''.join(strings)
 
-def life_next(current, torus_size):
-    ncounts = convolve2d(current, LIFE_KERNEL, mode='same', boundary='wrap')
-    result = np.zeros(current.shape)
-    for i in range(torus_size):
-        for j in range(torus_size):
+def next(frame):
+    ncounts = convolve2d(frame, LIFE_KERNEL, mode='same', boundary='wrap')
+    result = np.zeros(frame.shape)
+    for i in range(frame.shape[0]):
+        for j in range(frame.shape[1]):
             if ncounts[i, j] == 2:
-                result[i, j] = current[i, j]
+                result[i, j] = frame[i, j]
             elif ncounts[i, j] == 3:
                 result[i, j] = 1
             else:

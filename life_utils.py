@@ -1,5 +1,30 @@
 import life_io as lio
+import life_core as lc
 import numpy as np
+
+# assume being pretty is like an invariant, 
+# generally this is not true but we will hope for the best
+def find_cycle_id(cutout_to_find, all_cutouts):
+    # perform a cardinal sin - linear search, because 
+    # I'm too lazy to think of a faster way in python
+
+    for cycle_id, cycle_cutouts in enumerate(all_cutouts):
+        for cutout in cycle_cutouts:
+            
+            if cutout.shape != cutout_to_find.shape:
+                continue
+            
+            print("comparing to:")
+            print(lc.display(cutout))
+
+            if (cutout == cutout_to_find).all():
+                # elements are equal, we found or winner
+                # lucky for us the cycle indices are ordered
+                # +1 because 0th is the empty state
+                return 1 + cycle_id
+            
+    # end of the line
+    return None
 
 def count_alive_pairs_along_axis_edge(frame, axis):
     # cell values at opposing edges

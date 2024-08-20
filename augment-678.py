@@ -8,9 +8,9 @@ import life_core as lc
 import life_utils as lu
 import life_misc as sp
 
-TORUS_SIZE = 8
+TORUS_SIZE = 7
 input_filename = f'Torus{TORUS_SIZE}x{TORUS_SIZE}.txt'
-output_filename = f'Torus{TORUS_SIZE}x{TORUS_SIZE}-augmented-pretty.txt'
+output_filename = f'SpecialParams{TORUS_SIZE}x{TORUS_SIZE}.txt'
 eigenvalue_filename = f'EigenValues{TORUS_SIZE}x{TORUS_SIZE}.txt'
 
 with open(input_filename) as input, \
@@ -35,21 +35,13 @@ with open(input_filename) as input, \
         empty_line = input.readline()
         pretty_frame = lu.find_pretty(frame)
 
-        cycle = [frame]
-
-        current = frame
-        while True:
-            current = lc.life_next(current, TORUS_SIZE)
-            if np.array_equal(current, cycle[0]):
-                break
-            cycle.append(current)
-
-
+        cycle = lc.find_cycle(pretty_frame)
+        
         # new eigen value
-        eigenvalue = eigenvalue_input.readline().strip()
+        # eigenvalue = eigenvalue_input.readline().strip()
 
         # parse config line
-        id = int(re.search(r'#(\d+)', config_line).group(1))
+        # id = int(re.search(r'#(\d+)', config_line).group(1))
         period = int(re.search(r'c(\d+)', config_line).group(1))
         
         param_c = pretty_fraction(sum([f.sum() for f in cycle]), period)
@@ -61,10 +53,10 @@ with open(input_filename) as input, \
         param_hd = pretty_fraction(sum([sp.calculate_param_hd(f) for f in cycle]), period)
 
         # output new config line
-        output.write(f'#{id}: p={period}: c={param_c}: h={param_h}: d={param_d}: hh={param_hh}: dd={param_dd}: hd={param_hd}:\n')
-        output.write(f'ev: {eigenvalue}\n')
-        output.write(decays_line)
-        output.write(rates_line)
-        output.write(lc.cycle_to_str([pretty_frame], TORUS_SIZE, True) + '\n')
+        output.write(f'[{period}, {param_c}, {param_h}, {param_d}, {param_hh}, {param_dd}, {param_hd}]\n')
+        # output.write(f'ev: {eigenvalue}\n')
+        # output.write(decays_line)
+        # output.write(rates_line)
+        # output.write(lc.cycle_to_str([pretty_frame], TORUS_SIZE, True) + '\n')
 
 # %%
