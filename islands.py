@@ -7,7 +7,7 @@ import life_utils as lu
 import numpy as np
 import re
 
-torus_size = 8
+torus_size = 7
 input_filename = f'Torus{torus_size}x{torus_size}.txt'
 output_filename = f'Islands{torus_size}x{torus_size}.txt'
 
@@ -39,13 +39,20 @@ with open(input_filename) as input:
 
         cycle_island_coords = [ lm.get_island_coords(f) for f in pretty_cycle]
 
-        frame_island_count = [ len(coords) for coords in cycle_island_coords ]
-        frame_id = np.argmin(frame_island_count)           
-        bounding_boxes = [ lm.island_bounding_box(pretty_cycle[frame_id], *coord) for coord in cycle_island_coords[frame_id] ]
-
-        if len(bounding_boxes) == 1:
-            box = bounding_boxes[0]
-            cutout = pretty_cycle[frame_id][box[0]:box[1]+1, box[2]:box[3]+1]
+        frame_island_counts = [ len(coords) for coords in cycle_island_coords ]
+        
+        # id of frame with least islands
+        frame_id = np.argmin(frame_island_counts)
+        optimal_frame = pretty_cycle[frame_id]
+        optimal_frame_island_starting_coords = cycle_island_coords[frame_id]
+        
+        # list of set of cell coordinates for each island
+        island_coord_sets = [ lm.island_cells(optimal_frame, *coord) for coord in optimal_frame_island_starting_coords ]
+        
+        # if there is one island register it it cutout lookup
+        if frame_island_counts[frame_id] == 1:
+            island_cell_coords = island_coord_sets[0]    
+            cutout = lm.get_pretty_island_cutout(optimal_frame, island_cell_coords)
             cycle_cutouts.append(cutout)
         else:
             cycle_cutouts.append(None)
@@ -73,11 +80,11 @@ with open(input_filename) as input, open(output_filename, 'w') as output:
         cycle = lc.find_cycle(frame)
         pretty_cycle = [ lu.find_pretty(f) for f in cycle ]
 
-        cycle_island_coords = [ lm.get_island_coords(f) for f in pretty_cycle]
-
+        cycle_island_coords = [ lm.get_island_coords(f) for f in pretty_cycle ]
         frame_island_count = [ len(coords) for coords in cycle_island_coords ]
         frame_id = np.argmin(frame_island_count)           
-
+        optimal_frame = pretty_cycle[frame_id]
+        optimal_frame_island_starting_coords = cycle_island_coords[frame_id]
         # if id == 26:
         #     print(f"frame with least islands: {frame_id}")
         #     print(lc.cycle_to_str(pretty_cycle, torus_size, True))
@@ -86,7 +93,8 @@ with open(input_filename) as input, open(output_filename, 'w') as output:
         #cycle_bounding_boxes = [ [ lm.island_bounding_box(frame, *coord) for coord in frame_island_coords] for frame_island_coords, frame in zip(cycle_island_coords, pretty_cycle) ]
         
         # theoretically equal to cycle_bounding_boxes[0]
-        bounding_boxes = [ lm.island_bounding_box(pretty_cycle[frame_id], *coord) for coord in cycle_island_coords[frame_id] ]
+        island_coord_sets = [ lm.island_cells(optimal_frame, *coord) for coord in optimal_frame_island_starting_coords ]
+        #bounding_boxes = [ lm.island_bounding_box(pretty_cycle[frame_id], *coord) for coord in cycle_island_coords[frame_id] ]
 
         # when frame contains only a single island that cycle becomes the owner
         # of said island and its id will be reffered to later if this island comes 
@@ -111,24 +119,11 @@ with open(input_filename) as input, open(output_filename, 'w') as output:
         #print( lc.cycle_to_str(pretty_cycle, torus_size, True) )
         #print([ lm.island_cells(pretty_cycle[frame_id], *coord) for coord in cycle_island_coords[frame_id] ][0])
         #print(cycle_island_coords[frame_id])
+        
         island_ids = []
-        for box in bounding_boxes:
+        for cell_coords in island_coord_sets:
             
-            box_width = box[1] - box[0] + 1
-            box_height = box[3] - box[2] + 1
-
-            #print(box)
-            # smaller frame that contains only the current island
-            cutout = pretty_cycle[frame_id][box[0]:box[1]+1, box[2]:box[3]+1]
-            #print(lc.display(cutout))
-            # # cutout pasted on empty frame
-            # padded = np.pad(cutout, [(0, torus_size - box_width), (0, torus_size - box_height)], mode='constant', constant_values=0)
-
-            # find pretty can be moved to else branch
-            # placed here only for printing purposes
-            # padded_pretty = lu.find_pretty(padded)
-            # print(lc.display(padded_pretty))
-
+            cutout = lm.get_pretty_island_cutout(optimal_frame, cell_coords)
             cutout_cell_count = np.count_nonzero(cutout)
 
             if cutout_cell_count < 3:
@@ -141,6 +136,14 @@ with open(input_filename) as input, open(output_filename, 'w') as output:
                 island_ids.append(island_id if island_id != None else -cutout_cell_count)
 
         #print(f"#{id}, {island_ids}")
+        
+        # process island ids
+    
+        nonnegative_ids = [ x for x in island_ids if x >= 0 ]
+        nonnegative_ids.sort()
+        negative_ids = [ x for x in island_ids if x < 0 ]
+        negative_ids.sort()
+        island_ids = nonnegative_ids + negative_ids
         output.write(f'{island_ids}\n')
         # for island_id in island_ids:
         #     if island_id >= 0:
@@ -159,20 +162,21 @@ with open(input_filename) as input, open(output_filename, 'w') as output:
 
 # %%
 
+import life_io as lio
 import life_utils as lu
+import life_misc as lm
 
 raw_frame = """
-- - - - - - 
-- - - - - - 
-- - O O - - 
-- O - - O - 
-- - O O - - 
-- - - - - - """
+- - - - - - - -   
+- - - - - - - -   
+- O - - O - O O   
+O O O O O - O -   
+- - - - - - - -   
+- O O O O O O O   
+- O - - O - - O   
+- - - - - - - - """
 
 f = lio.parse_pretty_frame(raw_frame, 8, 'O', '-', ' ')
-
-p1 = lu.find_pretty(f)
-p2 = lu.find_pretty(p1)
-print(lc.display(p1))
-print(lc.display(p2))
+lio.show(f)
+print(lm.get_island_coords(f))
 # %%
