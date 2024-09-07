@@ -16,16 +16,19 @@ import numpy as np
 # O - - - - - - O"""
 
 raw_frame = """
-- O - - - - O -   
-O - - - - - - O   
-- - - - - - - -   
-- - - - - - - -   
-- - - - - - - -   
-- - - - - - - -   
-O - - - - - - O   
-- O - - - - O -"""
+- - - - - - - - - 
+- - - - - - - - - 
+- - - - - - - - - 
+- - - - - O O - - 
+- - O O - - O - - 
+- - O - O O - - - 
+- - - - - - - - - 
+- - - - - - - - - 
+- - - - - - - - - """
 
-frame = lio.parse_pretty_frame(raw_frame, 8, 'O', '-', ' ')
+frame = lio.parse_pretty_frame(raw_frame, 9, 'O', '-', ' ')
+
+print(lc.next(frame))
 
 # %%
 

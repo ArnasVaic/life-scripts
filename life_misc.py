@@ -1,3 +1,7 @@
+import numpy as np
+import life_utils as lu
+import life_io as lio
+
 def calculate_param_h(frame, step=1):
     """Caclulate number of vertical and horizontal alive cell pairs that have some number of cells in between (equal to step - 1).
 
@@ -76,7 +80,7 @@ def dfs_mark_island(frame, x, y):
         return
     # Recursively erase the island
     frame[x, y] = 0
-    adj_coords = [ (x + dx, y + dy) for dx in [-1, 0, 1] for dy in [-1, 0, 1] if (dx, dy) != (0, 0)]
+    adj_coords = [ ((x + dx + frame.shape[1]) % frame.shape[1], (y + dy + frame.shape[0]) % frame.shape[0]) for dx in [-1, 0, 1] for dy in [-1, 0, 1] if (dx, dy) != (0, 0)]
     [dfs_mark_island(frame, *coord) for coord in adj_coords]
     
 def get_island_coords(frame):
@@ -114,7 +118,7 @@ def dfs_add_cell(frame, x, y, lookup):
         return
     
     lookup.add((x, y))
-    adj_coords = [ (x + dx, y + dy) for dx in [-1, 0, 1] for dy in [-1, 0, 1] if (dx, dy) != (0, 0)]
+    adj_coords = [ ((x + dx + frame.shape[1]) % frame.shape[1], (y + dy + frame.shape[0]) % frame.shape[0]) for dx in [-1, 0, 1] for dy in [-1, 0, 1] if (dx, dy) != (0, 0)]
     [dfs_add_cell(frame, *coord, lookup) for coord in adj_coords]
 
 def island_cells(frame, x, y):
@@ -122,9 +126,33 @@ def island_cells(frame, x, y):
     dfs_add_cell(frame, x, y, lookup)
     return lookup
 
-def island_bounding_box(frame, x, y):
+# "pretty" is important in this case because
+def get_island_pretty_cutouts(frame):
+    pass
+
+def island_bounding_box_from_coord(frame, x, y):
     cells = island_cells(frame, x, y)
     xs, ys = [ x for (x, _) in cells ], [ y for (_, y) in cells ]
 
     # left, right, top, bottom 
     return (min(xs), max(xs), min(ys), max(ys))
+
+def island_bounding_box_from_cell_coords(island_cell_coords):
+    xs, ys = [ x for (x, _) in island_cell_coords ], [ y for (_, y) in island_cell_coords ]
+
+    # left, right, top, bottom 
+    return (min(xs), max(xs), min(ys), max(ys))
+
+# get pretty island cutout even if given island cell coordinates are not "continuous" e.g. wrap around edges 
+def get_pretty_island_cutout(frame, uncont_island_cell_coords):
+    frame_copy = frame.copy()
+    for cell_y in range(frame.shape[0]):
+        for cell_x in range(frame.shape[1]):
+            if (cell_y, cell_x) in uncont_island_cell_coords:
+                continue
+            frame_copy[cell_y, cell_x] = 0
+    frame_copy = lu.find_pretty(frame_copy)
+    cell_coord = np.unravel_index(np.argmax(frame_copy != 0), frame_copy.shape)
+    cell_coords = island_cells(frame_copy, *cell_coord)
+    box = island_bounding_box_from_cell_coords(cell_coords)
+    return frame_copy[box[0]:box[1]+1, box[2]:box[3]+1]
